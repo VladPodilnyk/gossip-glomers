@@ -27,3 +27,5 @@ go.work.sum
 # Maelstrom
 maelstrom-runner
 store
+
+.DS_Store
