@@ -14,7 +14,7 @@ func readIntoMap(msg maelstrom.Message) (map[string]any, error) {
 	return body, nil
 }
 
-func readTopology(nodeId string, body map[string]any) ([]string, error) {
+func readNeighbors(nodeId string, body map[string]any) ([]string, error) {
 	topology, ok := body["topology"].(map[string]any)
 	if !ok {
 		return nil, ErrInvalidMessage

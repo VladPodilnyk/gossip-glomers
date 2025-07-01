@@ -51,7 +51,7 @@ func handleTopology(state *nodeState) func(msg maelstrom.Message) error {
 			return err
 		}
 
-		state.neighbors, err = readTopology(state.node.ID(), body)
+		state.neighbors, err = readNeighbors(state.node.ID(), body)
 		if err != nil {
 			return err
 		}
