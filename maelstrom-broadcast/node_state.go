@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 )
 
@@ -8,6 +10,7 @@ type nodeState struct {
 	seen      map[int]bool
 	neighbors []string
 	node      *maelstrom.Node
+	mu        sync.Mutex
 }
 
 func newNodeState(node *maelstrom.Node) *nodeState {
@@ -15,6 +18,8 @@ func newNodeState(node *maelstrom.Node) *nodeState {
 }
 
 func (s *nodeState) AddMessage(newMessage int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.seen[newMessage] = true
 }
 
@@ -29,11 +34,16 @@ func (s *nodeState) GetHistory() []int {
 func (s *nodeState) Broadcast(message int) {
 	body := make(map[string]any)
 	body["message"] = message
+	body["type"] = "broadcast"
 
 	for _, n := range s.neighbors {
+		neighbor := n
 		// Fire and forget
 		go func() {
-			s.node.Send(n, body)
+			s.node.RPC(neighbor, body, func(msg maelstrom.Message) error {
+				// dummy function.
+				return nil
+			})
 		}()
 	}
 }

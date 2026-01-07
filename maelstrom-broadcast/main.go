@@ -16,18 +16,17 @@ func handleBroadcast(state *nodeState) func(msg maelstrom.Message) error {
 			return err
 		}
 
-		// TODO: currently send data even if a duplicate has been found, better skip such calls
 		data := readBroadcastMessage(body)
+		_, shouldAbortBroadcasting := state.seen[data]
 		state.AddMessage(data)
 
-		if shouldReply(body) {
+		if !shouldAbortBroadcasting {
 			state.Broadcast(data)
-			response := make(map[string]any)
-			response["type"] = "broadcast_ok"
-			return state.node.Reply(msg, response)
 		}
 
-		return nil
+		response := make(map[string]any)
+		response["type"] = "broadcast_ok"
+		return state.node.Reply(msg, response)
 	}
 }
 

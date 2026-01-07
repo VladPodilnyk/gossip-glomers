@@ -19,7 +19,7 @@ func readNeighbors(nodeId string, body map[string]any) ([]string, error) {
 	if !ok {
 		return nil, ErrInvalidMessage
 	}
-	neighbors, ok := topology[nodeId].([]interface{})
+	neighbors, ok := topology[nodeId].([]any)
 	if !ok {
 		return nil, ErrInvalidMessage
 	}
@@ -30,7 +30,7 @@ func readNeighbors(nodeId string, body map[string]any) ([]string, error) {
 			return nil, ErrInvalidMessage
 		}
 
-		value = append(result, node)
+		result = append(result, node)
 	}
 	return result, nil
 }
