@@ -1,0 +1,15 @@
+package main
+
+import (
+	"log"
+
+	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
+)
+
+func main() {
+	node := maelstrom.NewNode()
+
+	if err := node.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
