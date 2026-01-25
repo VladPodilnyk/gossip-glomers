@@ -1,4 +1,4 @@
-module maelstrom-unique-ids
+module unique-ids
 
 go 1.22.0
 
