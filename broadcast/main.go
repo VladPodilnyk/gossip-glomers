@@ -28,7 +28,7 @@ func logWithCtx(l *log.Logger, nodeId string, msg string) {
 func main() {
 	node := maelstrom.NewNode()
 	logger := initLogger()
-	state := &NodeState{}
+	state := newNodeState()
 
 	node.Handle("topology", func(msg maelstrom.Message) error {
 		parsedMsg, err := parseMessage[TopologyRequest](msg)

@@ -1,22 +1,28 @@
 package main
 
 import (
-	"slices"
+	"strconv"
 	"sync"
 )
 
 type NodeState struct {
-	mu sync.Mutex
-	// TODO: use Sets
-	values    []float64
+	mu        sync.Mutex
+	values    map[string]bool
 	neighbors []string
+}
+
+func newNodeState() *NodeState {
+	return &NodeState{
+		values:    make(map[string]bool),
+		neighbors: make([]string, 0),
+	}
 }
 
 func (ns *NodeState) addValue(value float64) {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
-
-	ns.values = append(ns.values, value)
+	key := strconv.FormatFloat(value, 'f', -1, 64)
+	ns.values[key] = true
 }
 
 func (ns *NodeState) getValues() []float64 {
@@ -24,7 +30,11 @@ func (ns *NodeState) getValues() []float64 {
 	defer ns.mu.Unlock()
 
 	values := make([]float64, len(ns.values))
-	copy(values, ns.values)
+	i := 0
+	for key := range ns.values {
+		values[i], _ = strconv.ParseFloat(key, 64)
+		i++
+	}
 
 	return values
 }
@@ -38,5 +48,6 @@ func (ns *NodeState) setNeighbors(neighbors []string) {
 func (ns *NodeState) isExist(value float64) bool {
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
-	return slices.Contains(ns.values, value)
+	key := strconv.FormatFloat(value, 'f', -1, 64)
+	return ns.values[key]
 }
