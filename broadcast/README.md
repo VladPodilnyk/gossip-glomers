@@ -3,6 +3,9 @@ In this part the task is to implement a broadcast system that gossip messages
 between nodes. The task is split into three parts that progressively increase in difficulty.
 Find the prompt for the problem [here](https://fly.io/dist-sys/3a/)
 
+__Note__: In this task it's OK to rely on the fact that all nodes are connected to each other, and there are
+no separate clusters of nodes.
+
 #### Part A
 This part is quite simple. We need to implement a few RPC handlers on our server.
 Since we begin with 1 node only, concurrency and topology do not matter.
@@ -24,4 +27,10 @@ To do this, when a node receives a broadcast message, it should send "broadcast"
 **Implementation note**: For 3b, the values are stored in an array of float64. While for this toy problem this is enough and not bad, it is not an efficient way to store the values. A more efficient way would be to use a set or in the case of Golang - map. This way lookups are fast and efficient.
 
 #### Part C
+🚧
+
+#### Part D
+🚧
+
+#### Part E
 🚧

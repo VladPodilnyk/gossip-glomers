@@ -11,6 +11,11 @@ import (
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 )
 
+// TODO refactor code (list)
+// 1. Improve parsing of messages
+// 2. Implement 3c handling network partitions
+// 3. Decrease code duplication and move common logic to separate functions and files.
+
 type topologyMsg struct {
 	Type     string              `json:"type"`
 	Topology map[string][]string `json:"topology"`
@@ -32,7 +37,8 @@ func logWithCtx(l *log.Logger, nodeId string, msg string) {
 }
 
 type nodeState struct {
-	mu        sync.Mutex
+	mu sync.Mutex
+	// TODO: use Sets
 	values    []float64
 	neighbors []string
 }
@@ -124,6 +130,7 @@ func main() {
 		state.addValue(value)
 
 		logWithCtx(logger, node.ID(), fmt.Sprintf("Broadcast message: %v", value))
+		// TODO: rewrite with goroutines and exponential backoff to handle failures
 		for _, neighbor := range state.neighbors {
 			// Skip sending message back to a sender
 			if neighbor == msg.Src {
