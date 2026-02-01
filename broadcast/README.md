@@ -27,7 +27,10 @@ To do this, when a node receives a broadcast message, it should send "broadcast"
 **Implementation note**: For 3b, the values are stored in an array of float64. While for this toy problem this is enough and not bad, it is not an efficient way to store the values. A more efficient way would be to use a set or in the case of Golang - map. This way lookups are fast and efficient.
 
 #### Part C
-🚧
+Part C introduces network partitions. This means that nodes may not be able to communicate with each other.
+To handle this gracefully, we can implement an exponential backoff strategy to retry sending messages to nodes that are not reachable. This means the following changes:
+- Using `SyncRPC` call instead of `Send`, since later one if a "fire and forget" call, but we need to ensure that the message is delivered or get an error response after all retry attempts are exhausted.
+- Add exponential backoff strategy and use errorgroup package to coordinate goroutines. This time instead of sequentially sending messages each node should concurrently fire broadcast messages to all its neighbors.
 
 #### Part D
 🚧
