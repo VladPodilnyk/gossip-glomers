@@ -8,7 +8,7 @@ unique-ids:
 
 .PHONY: broadcast
 broadcast: clean-logs
-	cd broadcast && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w broadcast --bin ~/go/bin/broadcast --node-count 5 --time-limit 20 --rate 10
+	cd broadcast && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w broadcast --bin ~/go/bin/broadcast --node-count 5 --time-limit 20 --rate 10 --nemesis partition
 
 .PHONY: clean-logs
 	rm /tmp/maelstrom*

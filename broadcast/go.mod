@@ -2,4 +2,7 @@ module broadcast
 
 go 1.24.4
 
-require github.com/jepsen-io/maelstrom/demo/go v0.0.0-20251128144731-cb7f07239012 // indirect
+require (
+	github.com/jepsen-io/maelstrom/demo/go v0.0.0-20251128144731-cb7f07239012 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+)

@@ -1,17 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
+	"golang.org/x/sync/errgroup"
 )
-
-// TODO refactor code (list)
-// 1. Improve parsing of messages
-// 2. Implement 3c handling network partitions
-// 3. Decrease code duplication and move common logic to separate functions and files.
 
 func initLogger() *log.Logger {
 	file, err := os.OpenFile("/tmp/maelstrom-broadcast.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -75,17 +73,32 @@ func main() {
 		}
 		state.addValue(body.Message)
 		logWithCtx(logger, node.ID(), fmt.Sprintf("Broadcast message: %v", body.Message))
-		// TODO: rewrite with goroutines and exponential backoff to handle failures
+
+		group := new(errgroup.Group)
+		retry := exponentialBackoff(500*time.Millisecond, 15)
 		for _, neighbor := range state.neighbors {
 			// Skip sending message back to a sender
 			if neighbor == msg.Src {
 				continue
 			}
 
-			err := node.Send(neighbor, body)
-			if err != nil {
-				logWithCtx(logger, node.ID(), fmt.Sprintf("Error sending message to neighbor %s: %v", neighbor, err))
-			}
+			group.Go(func() error {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+
+				request := func() error {
+					_, err := node.SyncRPC(ctx, neighbor, body)
+					return err
+				}
+
+				return retry(request, func(err error) {
+					logWithCtx(logger, node.ID(), fmt.Sprintf("Error sending message to neighbor %s: %v", neighbor, err))
+				})
+			})
+		}
+
+		if err := group.Wait(); err != nil {
+			return err
 		}
 
 		return node.Reply(msg, map[string]any{
