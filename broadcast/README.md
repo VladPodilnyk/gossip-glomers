@@ -32,8 +32,8 @@ To handle this gracefully, we can implement an exponential backoff strategy to r
 - Using `SyncRPC` call instead of `Send`, since later one if a "fire and forget" call, but we need to ensure that the message is delivered or get an error response after all retry attempts are exhausted.
 - Add exponential backoff strategy and use errorgroup package to coordinate goroutines. This time instead of sequentially sending messages each node should concurrently fire broadcast messages to all its neighbors.
 
-#### Part D
-🚧
-
-#### Part E
-🚧
+#### Part D & E
+Part D & E double down on overall performance of the system. Without knowing this, the solution for the part C
+has optimizations that pass the tests for parts D & E. I'd say the most important ones are:
+- Retries with exponential backoff strategy.
+- Sending broadcast messages concurrently.
