@@ -8,6 +8,6 @@ __Progress__:
 - [x] Echo
 - [x] Unique IDs
 - [x] Broadcast
-- [ ] Grow-only counter
+- [x] Grow-only counter
 - [ ] Kafka-style log
 - [ ] Totally-Available

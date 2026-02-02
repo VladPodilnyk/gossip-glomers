@@ -45,17 +45,25 @@ func main() {
 			return err
 		}
 
-		currValue, err := kv.ReadInt(ctx, node.ID())
-		if err != nil && maelstrom.ErrorCode(err) != maelstrom.KeyDoesNotExist {
-			logWithCtx(logger, node.ID(), fmt.Sprintf("error reading key: %v, nodeID=%s", err, node.ID()))
-			return err
+		// A quite dumb and simple solution to ensure that the counter is properly updated even
+		// if during update the node reads stale value and CAS fails
+		for {
+			currValue, err := kv.ReadInt(ctx, node.ID())
+			if err != nil && maelstrom.ErrorCode(err) != maelstrom.KeyDoesNotExist {
+				logWithCtx(logger, node.ID(), fmt.Sprintf("error reading key: %v, nodeID=%s", err, node.ID()))
+				return err
+			}
+
+			if maelstrom.ErrorCode(err) == maelstrom.KeyDoesNotExist {
+				currValue = 0
+			}
+
+			err = kv.CompareAndSwap(ctx, node.ID(), currValue, currValue+addMessage.Delta, true)
+			if err == nil {
+				break
+			}
 		}
 
-		if maelstrom.ErrorCode(err) == maelstrom.KeyDoesNotExist {
-			currValue = 0
-		}
-
-		kv.CompareAndSwap(ctx, node.ID(), currValue, currValue+addMessage.Delta, true)
 		return node.Reply(msg, map[string]any{
 			"msg_id": addMessage.MsgID,
 			"type":   "add_ok",
