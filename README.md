@@ -7,7 +7,7 @@
 __Progress__:
 - [x] Echo
 - [x] Unique IDs
-- [ ] Broadcast
+- [x] Broadcast
 - [ ] Grow-only counter
 - [ ] Kafka-style log
 - [ ] Totally-Available

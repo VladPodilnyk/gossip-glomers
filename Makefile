@@ -10,5 +10,9 @@ unique-ids:
 broadcast: clean-logs
 	cd broadcast && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w broadcast --bin ~/go/bin/broadcast --node-count 25 --time-limit 20 --rate 100 --latency 100
 
+.PHONY: gcounter
+gcounter: clean-logs
+	cd gcounter && go install . && cd ../ && ./maelstrom test -w g-counter --bin ~/go/bin/gcounter --node-count 3 --rate 100 --time-limit 20 --nemesis partition
+
 .PHONY: clean-logs
 	rm /tmp/maelstrom*
