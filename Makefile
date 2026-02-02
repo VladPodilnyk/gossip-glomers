@@ -12,7 +12,7 @@ broadcast: clean-logs
 
 .PHONY: gcounter
 gcounter: clean-logs
-	cd gcounter && go install . && cd ../ && ./maelstrom test -w g-counter --bin ~/go/bin/gcounter --node-count 3 --rate 100 --time-limit 20 --nemesis partition
+	cd gcounter && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w g-counter --bin ~/go/bin/gcounter --node-count 3 --rate 100 --time-limit 20 --nemesis partition
 
 .PHONY: clean-logs
 	rm /tmp/maelstrom*
