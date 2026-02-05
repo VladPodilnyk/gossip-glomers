@@ -14,5 +14,9 @@ broadcast: clean-logs
 gcounter: clean-logs
 	cd gcounter && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w g-counter --bin ~/go/bin/gcounter --node-count 3 --rate 100 --time-limit 20 --nemesis partition
 
+.PHONE: replicated-log
+replicated-log: clean-logs
+	cd replicated-log && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w kafka --bin ~/go/bin/replicated-log --node-count 1 --concurrency 2n --time-limit 20 --rate 1000
+
 .PHONY: clean-logs
 	rm /tmp/maelstrom*
