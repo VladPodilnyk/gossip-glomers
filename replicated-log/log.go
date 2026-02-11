@@ -1,34 +1,59 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 )
 
-// TODO: persist WAL on the disk
 type ReplicatedLog struct {
-	mu   sync.Mutex // used only during initialization
+	mu   sync.RWMutex
 	wals map[string]*WAL
 }
 
-func (lg *ReplicatedLog) Init(key string) error {
+func newReplicatedLog() *ReplicatedLog {
+	return &ReplicatedLog{
+		wals: make(map[string]*WAL),
+	}
+}
+
+func (lg *ReplicatedLog) InitIfNotExists(nodeId string, key string) error {
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
+
+	if _, ok := lg.wals[key]; ok {
+		return nil
+	}
+
+	wal, err := newWAL(nodeId, key)
+	if err != nil {
+		return err
+	}
+	lg.wals[key] = wal
 	return nil
 }
 
 func (lg *ReplicatedLog) Has(key string) bool {
+	lg.mu.RLock()
+	defer lg.mu.RUnlock()
+
 	_, ok := lg.wals[key]
 	return ok
 }
 
 func (lg *ReplicatedLog) Append(key string, value int) (int, error) {
-	if !lg.Has(key) {
-		return -1, errors.New(fmt.Sprintf("Failed to append to the log partition %s", key))
-	}
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
+
 	return lg.wals[key].Append(value)
 }
 
 func (lg *ReplicatedLog) Read(key string, offset uint, limit uint) ([][]int, error) {
+	lg.mu.RLock()
+	defer lg.mu.RUnlock()
+
+	if _, ok := lg.wals[key]; !ok {
+		return [][]int{}, nil
+	}
+
 	if limit == 0 || offset > uint(lg.wals[key].Offset()) {
 		return [][]int{}, nil
 	}
@@ -36,21 +61,27 @@ func (lg *ReplicatedLog) Read(key string, offset uint, limit uint) ([][]int, err
 }
 
 func (lg *ReplicatedLog) Commit(offsets map[string]int) error {
+	lg.mu.Lock()
+	defer lg.mu.Unlock()
+
 	for key, offset := range offsets {
-		// Ignore incorrect offsets - should be fine for the toy implementation
-		if offset > lg.wals[key].LastCommittedOffset() {
-			err := lg.wals[key].Commit(offset)
-			if err != nil {
-				return err
-			}
+		err := lg.wals[key].Commit(offset)
+		if err != nil {
+			return err
 		}
 	}
+	return nil
 }
 
 func (lg *ReplicatedLog) GetCommittedOffsets(keys []string) map[string]int {
+	lg.mu.RLock()
+	defer lg.mu.RUnlock()
+
 	result := make(map[string]int, len(keys))
 	for _, key := range keys {
-		result[key] = lg.wals[key].LastCommittedOffset()
+		if _, ok := lg.wals[key]; ok && lg.wals[key].LastCommittedOffset() >= 0 {
+			result[key] = lg.wals[key].LastCommittedOffset()
+		}
 	}
 	return result
 }

@@ -19,4 +19,5 @@ replicated-log: clean-logs
 	cd replicated-log && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w kafka --bin ~/go/bin/replicated-log --node-count 1 --concurrency 2n --time-limit 20 --rate 1000
 
 .PHONY: clean-logs
-	rm /tmp/maelstrom*
+clean-logs:
+	rm -rf ${HOME}/maelstrom
