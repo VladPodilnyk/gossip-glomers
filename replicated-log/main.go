@@ -6,7 +6,7 @@ import (
 
 func main() {
 	node := maelstrom.NewNode()
-	nodeLog := newReplicatedLog()
+	nodeLog := ReplicatedLog{}
 
 	node.Handle("send", func(msg maelstrom.Message) error {
 		req, err := parseMessage[SendRequest](msg)
@@ -14,8 +14,14 @@ func main() {
 			return err
 		}
 
-		nodeLog.Append(req.Key, req.Msg)
-		lastOffset := nodeLog.LastOffset[req.Key]
+		if !nodeLog.Has(req.Key) {
+			nodeLog.Init(req.Key)
+		}
+
+		lastOffset, err := nodeLog.Append(req.Key, req.Msg)
+		if err != nil {
+			return err
+		}
 
 		return node.Reply(msg, map[string]any{
 			"msg_id": req.MsgId,
@@ -32,7 +38,10 @@ func main() {
 
 		result := map[string][][]int{}
 		for key, offset := range req.Offsets {
-			messageList := nodeLog.ReadMessages(key, uint(offset), 5)
+			messageList, err := nodeLog.Read(key, uint(offset), 5)
+			if err != nil {
+				return err
+			}
 			result[key] = messageList
 		}
 

@@ -1,81 +1,56 @@
 package main
 
-import "sync"
-
-type LogEntry struct {
-	Offset int
-	Data   int
-}
+import (
+	"errors"
+	"fmt"
+	"sync"
+)
 
 // TODO: persist WAL on the disk
 type ReplicatedLog struct {
-	mu                  sync.Mutex
-	LastOffset          map[string]int
-	LastCommittedOffset map[string]int
-	Messages            map[string][]LogEntry // WAL
+	mu   sync.Mutex // used only during initialization
+	wals map[string]*WAL
 }
 
-func newReplicatedLog() *ReplicatedLog {
-	return &ReplicatedLog{
-		LastOffset:          make(map[string]int),
-		LastCommittedOffset: make(map[string]int),
-		Messages:            make(map[string][]LogEntry),
-	}
+func (lg *ReplicatedLog) Init(key string) error {
+	return nil
 }
 
-// TODO: protect my lock for multi-node setup
-func (lg *ReplicatedLog) Append(key string, value int) {
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
-
-	lastOffset, ok := lg.LastOffset[key]
-	if !ok {
-		lastOffset = -1
-	}
-	newOffset := lastOffset + 1
-	entry := LogEntry{
-		Offset: newOffset,
-		Data:   value,
-	}
-	lg.Messages[key] = append(lg.Messages[key], entry)
-	lg.LastOffset[key] = newOffset
+func (lg *ReplicatedLog) Has(key string) bool {
+	_, ok := lg.wals[key]
+	return ok
 }
 
-func (lg *ReplicatedLog) ReadMessages(key string, offset uint, limit uint) [][]int {
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
-
-	if limit == 0 || offset > uint(len(lg.Messages[key])) {
-		return [][]int{}
+func (lg *ReplicatedLog) Append(key string, value int) (int, error) {
+	if !lg.Has(key) {
+		return -1, errors.New(fmt.Sprintf("Failed to append to the log partition %s", key))
 	}
-	result := make([][]int, 0, limit)
-	for i := offset; i < offset+limit; i++ {
-		if i >= uint(len(lg.Messages[key])) {
-			break
-		}
-		result = append(result, []int{lg.Messages[key][i].Offset, lg.Messages[key][i].Data})
-	}
-	return result
+	return lg.wals[key].Append(value)
 }
 
-func (lg *ReplicatedLog) Commit(offsets map[string]int) {
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
+func (lg *ReplicatedLog) Read(key string, offset uint, limit uint) ([][]int, error) {
+	if limit == 0 || offset > uint(lg.wals[key].Offset()) {
+		return [][]int{}, nil
+	}
+	return lg.wals[key].Read(offset, limit)
+}
 
+func (lg *ReplicatedLog) Commit(offsets map[string]int) error {
 	for key, offset := range offsets {
-		if offset > lg.LastCommittedOffset[key] {
-			lg.LastCommittedOffset[key] = offset
+		// Ignore incorrect offsets - should be fine for the toy implementation
+		if offset > lg.wals[key].LastCommittedOffset() {
+			err := lg.wals[key].Commit(offset)
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
 
 func (lg *ReplicatedLog) GetCommittedOffsets(keys []string) map[string]int {
-	lg.mu.Lock()
-	defer lg.mu.Unlock()
-
 	result := make(map[string]int, len(keys))
 	for _, key := range keys {
-		result[key] = lg.LastCommittedOffset[key]
+		result[key] = lg.wals[key].LastCommittedOffset()
 	}
 	return result
 }
