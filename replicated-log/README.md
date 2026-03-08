@@ -20,10 +20,3 @@ The log state is protected by a mutex to ensure safe concurrent access. This was
 __TODO__:
 The idea for 2&3 is to implement a distributed log using lin-kv that guarantees linearizability.
 Lin-kv should be used for orchestration and coordination. The log itself should be stored locally on disk on each node in the cluster. The leader node should be responsible for handling writes. Hence followers should forward writes to the leader.
-
-- [x] implement persistence and store logs for each node locally on disk
-- [ ] implement leader management:
-    - auto select leader (can be just a random node or the first node that successfully put its claim to link-kv)
-    - implement failover (heartbeats and last updated timestamps or on failed broadcasts messages)
-- [ ] implement replication protocol (leader should wait for thea ACKs message from the majority of followers)
-- [ ] return only committed values

@@ -1,17 +1,47 @@
 package main
 
 import (
+	"context"
+	"time"
+
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 )
 
 func main() {
 	node := maelstrom.NewNode()
+	var leaderNode string
 	nodeLog := newReplicatedLog()
+	kv := maelstrom.NewLinKV(node)
+
+	node.Handle("init", func(msg maelstrom.Message) error {
+		// register a node as a leader or fetch current leader
+		leaderNode = node.ID()
+		err := becomeLeader(kv, leaderNode)
+		if err != nil {
+			leaderNode, err = getLeader(kv)
+			if err != nil {
+				panic("Failed to assign leader")
+			}
+		}
+		return nil
+	})
 
 	node.Handle("send", func(msg maelstrom.Message) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		req, err := parseMessage[SendRequest](msg)
 		if err != nil {
 			return err
+		}
+
+		// if not a leader then proxy request to a leader node
+		if msg.Src != leaderNode && leaderNode != node.ID() {
+			rsp, err := node.SyncRPC(ctx, leaderNode, msg.Body)
+			if err != nil {
+				return err
+			}
+			return node.Reply(msg, rsp.Body)
 		}
 
 		if err := nodeLog.InitIfNotExists(node.ID(), req.Key); err != nil {
@@ -21,6 +51,22 @@ func main() {
 		lastOffset, err := nodeLog.Append(req.Key, req.Msg)
 		if err != nil {
 			return err
+		}
+
+		if leaderNode != node.ID() {
+			// super simple commit: wait for all nodes to write a message.
+			for _, id := range node.NodeIDs() {
+				if node.ID() != id {
+					rsp, err := node.SyncRPC(ctx, id, msg.Body)
+					if err != nil {
+						return err
+					}
+					req, err := parseMessage[SendRequest](rsp)
+					if err != nil || req.Type != "send_ok" {
+						return err
+					}
+				}
+			}
 		}
 
 		return node.Reply(msg, map[string]any{
