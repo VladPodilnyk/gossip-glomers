@@ -9,5 +9,5 @@ __Progress__:
 - [x] Unique IDs
 - [x] Broadcast
 - [x] Grow-only counter
-- [ ] Kafka-style log
+- [x] Kafka-style log
 - [ ] Totally-Available
