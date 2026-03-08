@@ -14,9 +14,13 @@ broadcast: clean-logs
 gcounter: clean-logs
 	cd gcounter && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w g-counter --bin ~/go/bin/gcounter --node-count 3 --rate 100 --time-limit 20 --nemesis partition
 
-.PHONE: replicated-log
+.PHONY: replicated-log
 replicated-log: clean-logs
 	cd replicated-log && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w kafka --bin ~/go/bin/replicated-log --node-count 2 --concurrency 2n --time-limit 20 --rate 1000
+
+.PHONY: txn
+txn:
+	cd txn && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w txn-rw-register --bin ~/go/bin/txn --node-count 1 --time-limit 20 --rate 1000 --concurrency 2n --consistency-models read-uncommitted --availability total
 
 .PHONY: clean-logs
 clean-logs:
