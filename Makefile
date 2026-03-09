@@ -20,8 +20,7 @@ replicated-log: clean-logs
 
 .PHONY: txn
 txn:
-	cd txn && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w txn-rw-register --bin ~/go/bin/txn --node-count 1 --time-limit 20 --rate 1000 --concurrency 2n --consistency-models read-uncommitted --availability total
-
+	cd txn && go install . && cd ../ && ./maelstrom-runner/maelstrom test -w txn-rw-register --bin ~/go/bin/txn --node-count 2 --concurrency 2n --time-limit 20 --rate 1000 --consistency-models read-uncommitted
 .PHONY: clean-logs
 clean-logs:
 	rm -rf ${HOME}/maelstrom

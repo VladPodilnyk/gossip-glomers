@@ -12,8 +12,14 @@ type TxnMessage struct {
 	Txn   [][]any `json:"txn"`
 }
 
-func parseMessage(data maelstrom.Message) (TxnMessage, error) {
-	var msg TxnMessage
+type SyncMessage struct {
+	MsgId  int         `json:"msg_id"`
+	Type   string      `json:"type"`
+	Writes map[int]int `json:"writes"`
+}
+
+func parseMessage[T any](data maelstrom.Message) (T, error) {
+	var msg T
 	if err := json.Unmarshal(data.Body, &msg); err != nil {
 		return msg, err
 	}
